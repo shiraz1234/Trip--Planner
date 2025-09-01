@@ -8,7 +8,7 @@ from langchain.chains import LLMChain, SequentialChain
 # Initialize Groq client
 # =====================
 llm = ChatGroq(
-    api_key="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",  # 🔑 replace with your key
+    api_key=st.secrets["GROQ_API_KEY"],  # Use Streamlit secrets
     model="llama-3.1-8b-instant",
     temperature=0.6
 )
@@ -57,19 +57,15 @@ def get_mock_flights(origin, destination, date):
 # Streamlit UI
 # =====================
 st.set_page_config(page_title="Eco Travel Planner", page_icon="🌍", layout="wide")
-
 st.title("🌍 Eco-Friendly Travel Planner")
 
-# Sidebar for inputs
+# Sidebar Inputs
 st.sidebar.header("✈️ Plan Your Trip")
-
-# Dropdown for origin & destination
-origins = ["DEL", "BOM", "MAA", "BLR"]  # Delhi, Mumbai, Chennai, Bangalore
-destinations = ["DXB", "LON", "NYC", "BKK", "PAR"]  # Dubai, London, New York, Bangkok, Paris
+origins = ["DEL", "BOM", "MAA", "BLR"]
+destinations = ["DXB", "LON", "NYC", "BKK", "PAR"]
 
 origin = st.sidebar.selectbox("Choose Origin (Airport Code)", origins)
 destination = st.sidebar.selectbox("Choose Destination (Airport Code)", destinations)
-
 days = st.sidebar.slider("Days of Travel", 3, 30, 7)
 date = st.sidebar.date_input("Departure Date")
 
