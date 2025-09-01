@@ -14,31 +14,6 @@ llm = ChatGroq(
 )
 
 # =====================
-# Define Chains
-# =====================
-budget_prompt = PromptTemplate(
-    input_variables=["trip"],
-    template="""
-    I want to travel {trip}.
-    Give me a budget which is eco-friendly and cheap.
-    """
-)
-budget_chain = LLMChain(llm=llm, prompt=budget_prompt, output_key="budget")
-
-places_prompt = PromptTemplate(
-    input_variables=["budget"],
-    template="Suggest some must-visit eco-friendly places in that country, based on this budget: {budget}"
-)
-places_chain = LLMChain(llm=llm, prompt=places_prompt, output_key="places")
-
-chain = SequentialChain(
-    chains=[budget_chain, places_chain],
-    input_variables=["trip"],
-    output_variables=["budget", "places"],
-    verbose=True
-)
-
-# =====================
 # Mock Flight Generator
 # =====================
 def get_mock_flights(origin, destination, date):
@@ -69,9 +44,48 @@ destination = st.sidebar.selectbox("Choose Destination (Airport Code)", destinat
 days = st.sidebar.slider("Days of Travel", 3, 30, 7)
 date = st.sidebar.date_input("Departure Date")
 
+# Optional text file uploader for extra context
+uploaded_file = st.sidebar.file_uploader("Optional: Upload a text file for extra context", type="txt")
+extra_context = ""
+if uploaded_file:
+    extra_context = uploaded_file.read().decode("utf-8")
+    st.sidebar.success("File loaded!")
+
+# =====================
+# Define LLM Prompts
+# =====================
+trip_description = f"to {destination} for {days} days"
+
+budget_template = """
+I want to travel {trip}.
+{extra_context}
+Give me a budget which is eco-friendly and cheap.
+"""
+
+budget_prompt = PromptTemplate(
+    input_variables=["trip", "extra_context"],
+    template=budget_template
+)
+budget_chain = LLMChain(llm=llm, prompt=budget_prompt, output_key="budget")
+
+places_prompt = PromptTemplate(
+    input_variables=["budget"],
+    template="Suggest some must-visit eco-friendly places in that country, based on this budget: {budget}"
+)
+places_chain = LLMChain(llm=llm, prompt=places_prompt, output_key="places")
+
+chain = SequentialChain(
+    chains=[budget_chain, places_chain],
+    input_variables=["trip", "extra_context"],
+    output_variables=["budget", "places"],
+    verbose=True
+)
+
+# =====================
+# Run the Chain
+# =====================
 if st.sidebar.button("Generate Itinerary"):
-    trip = f"to {destination} for {days} days"
-    result = chain({"trip": trip})
+    result = chain({"trip": trip_description, "extra_context": extra_context})
 
     st.subheader("💰 Suggested Budget")
     st.write(result["budget"])
